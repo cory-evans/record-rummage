@@ -1,0 +1,18 @@
+@if (!(signedIn$|async)) {
+
+<div class="absolute right-0 top-0 m-2">
+  <button class="ui-btn ui-btn-secondary" (click)="login()">
+    <app-icon icon="user" />
+    Sign In With Spotify
+  </button>
+</div>
+} @else {
+<div class="absolute right-0 top-0 m-2">
+  <button type="button" class="ui-btn" (click)="logout()">
+    <app-icon icon="lock-closed" />
+    Logout
+  </button>
+</div>
+<app-now-playing />
+
+}

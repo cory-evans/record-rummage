@@ -1,0 +1,26 @@
+# https://taskfile.dev
+
+version: '3'
+
+vars:
+  GREETING: Hello, World!
+  DATABASE_SCHEMA_DIR: schema
+  DATABASE: "postgres://rr-dev:123456@db.cory-evans.com/record-rummage-dev?sslmode=disable"
+
+tasks:
+  default:
+    cmds:
+      - gow -e go,mod run cmd/api/main.go
+
+  migrate:
+    cmds:
+      - migrate -path "{{ .DATABASE_SCHEMA_DIR }}" -database {{ .DATABASE }} {{.CLI_ARGS}}
+
+  migrate-up:
+    cmds:
+      - migrate -path "{{ .DATABASE_SCHEMA_DIR }}" -database {{ .DATABASE }} up
+
+  migration-create:
+    cmds:
+      - migrate create -dir "{{ .DATABASE_SCHEMA_DIR }}" -ext sql {{.CLI_ARGS}}
+  

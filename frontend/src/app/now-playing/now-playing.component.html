@@ -1,0 +1,95 @@
+<div class="mx-auto mt-16" style="max-width: 480px">
+  <div
+    class="ui-card bg-base-100 shadow-xl border"
+    *ngIf="currentlyPlaying$ | async as t"
+  >
+    <figure>
+      <button
+        type="button"
+        class="absolute top-2 -right-14 ui-btn ui-btn-circle"
+        (click)="this.forceRefresh$.next()"
+      >
+        <app-icon icon="arrow-path" />
+      </button>
+      <img
+        [src]="t.item.album.images[0].url"
+        *ngIf="t.item.id !== lastRevealedTrackId"
+        class="object-cover"
+        style="width: 480px; height: 480px"
+      />
+      <div
+        style="width: 480px; height: 480px"
+        *ngIf="t.item.id === lastRevealedTrackId"
+      >
+        <div class="flex flex-col justify-center h-full">
+          <div *ngIf="user">
+            <img
+              *ngIf="user.images.length > 0"
+              [src]="pickBigestImage(user.images)"
+              class="ui-mask ui-mask-circle mx-auto mb-3"
+              width="250px"
+              (error)="user.images = []"
+            />
+
+            <h3 class="text-center text-3xl font-semibold">
+              {{ user.display_name }}
+            </h3>
+          </div>
+        </div>
+      </div>
+    </figure>
+    <div class="ui-card-body">
+      <h2 class="ui-card-title">{{ t.item.name }}</h2>
+      <p>
+        @for (a of t.item.artists; track a.id) {
+        {{ a.name }}{{ !$last ? ", " : "" }}
+        }
+      </p>
+      <div class="ui-card-actions justify-center mt-2">
+        <button
+          type="button"
+          class="ui-btn ui-btn-circle ui-btn-outline"
+          (click)="previousTrack()"
+        >
+          <app-icon icon="backward" />
+        </button>
+
+        <button
+          type="button"
+          class="ui-btn ui-btn-circle ui-btn-outline"
+          (click)="togglePlayPause(t.is_playing)"
+        >
+          <app-icon [icon]="t.is_playing ? 'pause' : 'play'" />
+        </button>
+        <button
+          type="button"
+          class="ui-btn ui-btn-circle ui-btn-outline"
+          (click)="nextTrack()"
+        >
+          <app-icon icon="forward" />
+        </button>
+      </div>
+
+      <div class="ui-card-actions justify-center mt-2">
+        <button
+          *ngIf="t.item.id !== lastRevealedTrackId"
+          type="button"
+          class="ui-btn ui-btn-primary w-full"
+          (click)="reveal()"
+        >
+          <app-icon icon="eye" />
+          Reveal
+        </button>
+        <button
+          *ngIf="t.item.id === lastRevealedTrackId"
+          type="button"
+          class="ui-btn ui-btn-primary w-full"
+          (click)="lastRevealedTrackId = null"
+        >
+          <app-icon icon="eye-slash" />
+          Hide
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
