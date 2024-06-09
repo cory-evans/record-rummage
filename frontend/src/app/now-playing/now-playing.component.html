@@ -13,27 +13,20 @@
       <div
         style="width: 480px; height: 480px"
         *ngIf="item.id === lastRevealedTrackId"
-        class="flex flex-col justify-center h-full"
+        class="flex flex-col justify-center h-full p-2"
       >
-        <div class="flex flex-row justify-center p-2 gap-2">
-          <div *ngFor="let user of users">
-            <img
-              *ngIf="user.images.length > 0"
-              [src]="pickBigestImage(user.images)"
-              class="ui-mask ui-mask-circle mx-auto mb-3"
-              (error)="user.images = []"
-            />
+        @for (user of users; track user.id){
+        <h3 class="text-center text-4xl font-semibold">
+          {{ user.display_name }}
+        </h3>
 
-            <h3 class="text-center text-3xl font-semibold">
-              {{ user.display_name }}
-            </h3>
-          </div>
-        </div>
+        <div class="ui-divider ui-divider-primary" *ngIf="!$last"></div>
+        }
       </div>
     </figure>
     <div class="ui-card-body">
-      <h2 class="ui-card-title">{{ item.name }}</h2>
-      <p>
+      <h2 class="ui-card-title text-2xl">{{ item.name }}</h2>
+      <p class="text-lg">
         @for (a of item.artists; track a.id) {
         {{ a.name }}{{ !$last ? ", " : "" }}
         }

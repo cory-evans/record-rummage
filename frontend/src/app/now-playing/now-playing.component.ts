@@ -2,6 +2,7 @@ import { CommonModule } from '@angular/common';
 import { Component } from '@angular/core';
 import {
   BehaviorSubject,
+  Subject,
   combineLatest,
   filter,
   firstValueFrom,
@@ -32,8 +33,7 @@ export class NowPlayingComponent {
       .pipe(
         switchMap(() => this.dueToEnd$),
         map((dueToEnd) => {
-          const now = new Date();
-          return dueToEnd < now;
+          return dueToEnd < Date.now();
         }),
         filter((x) => x)
       )
@@ -42,28 +42,27 @@ export class NowPlayingComponent {
       });
   }
 
+  private currentlyPlayingResponseTime$ = new BehaviorSubject<number>(
+    Date.now()
+  );
   currentlyPlaying$ = combineLatest([this.timer$, this.forceRefresh$]).pipe(
     switchMap(() => this.http.get<Root>('/api/track/currently-playing')),
+    tap(() => this.currentlyPlayingResponseTime$.next(Date.now())),
     shareReplay(1)
   );
 
-  dueToEnd$ = this.currentlyPlaying$.pipe(
-    map((x) => x.item.duration_ms - x.progress_ms),
-    map((ms) => {
-      const now = new Date();
-      now.setMilliseconds(now.getMilliseconds() + ms);
-
-      return now;
+  dueToEnd$ = combineLatest([
+    this.currentlyPlaying$,
+    this.currentlyPlayingResponseTime$,
+  ]).pipe(
+    map(([x, t]) => {
+      const msLeft = x.item.duration_ms - x.progress_ms;
+      return t + msLeft;
     })
   );
 
   currentlyPlayingItem$ = this.currentlyPlaying$.pipe(map((x) => x.item));
   isPlaying$ = this.currentlyPlaying$.pipe(map((x) => x.is_playing));
-
-  refreshPlaylist() {
-    // let id = '4CGbyFVJTDvQDDa7Pg8IaO';
-    // this.http.post('/api/playlist/refresh?id=' + id, {}).subscribe(() => {});
-  }
 
   async togglePlayPause() {
     const is_playing = await firstValueFrom(this.isPlaying$);
