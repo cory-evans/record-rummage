@@ -1,4 +1,6 @@
-FROM golang:alpine AS builder
+FROM --platform=$BUILDPLATFORM golang:alpine AS builder
+ARG BUILDPLATFORM
+ARG TARGETPLATFORM
 
 WORKDIR /app
 
@@ -8,7 +10,8 @@ RUN go mod download
 
 COPY . .
 
-RUN go build -o /server cmd/api/main.go
+ARG TARGETOS TARGETARCH
+RUN GOOS=$TARGETOS GOARCH=$TARGETARCH go build -o /server cmd/api/main.go
 
 FROM alpine
 
