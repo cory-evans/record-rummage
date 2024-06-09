@@ -15,26 +15,32 @@ func (h *TrackHandler) Reveal(c *fiber.Ctx) error {
 		return c.JSON(nil)
 	}
 
-	user, err := h.spotifyRepo.GetUser(c.Context(), addedBy)
-	if err != nil {
-		client, err := h.spotifyClient.ForUser(c)
+	var users = make([]*models.SpotifyUser, 0)
+
+	for _, id := range addedBy {
+		user, err := h.spotifyRepo.GetUser(c.Context(), id)
 		if err != nil {
-			return err
+			client, err := h.spotifyClient.ForUser(c)
+			if err != nil {
+				return err
+			}
+
+			spotifyUser, err := client.GetUsersPublicProfile(c.Context(), spotify.ID(id))
+			if err != nil {
+				return err
+			}
+
+			user = &models.SpotifyUser{
+				ID:          spotifyUser.ID,
+				DisplayName: spotifyUser.DisplayName,
+				Images:      models.SpotifyImageFromList(spotifyUser.Images),
+			}
+
+			h.spotifyRepo.CreateOrUpdateUser(c.Context(), user)
 		}
 
-		spotifyUser, err := client.GetUsersPublicProfile(c.Context(), spotify.ID(addedBy))
-		if err != nil {
-			return err
-		}
-
-		user = &models.SpotifyUser{
-			ID:          spotifyUser.ID,
-			DisplayName: spotifyUser.DisplayName,
-			Images:      models.SpotifyImageFromList(spotifyUser.Images),
-		}
-
-		h.spotifyRepo.CreateOrUpdateUser(c.Context(), user)
+		users = append(users, user)
 	}
 
-	return c.JSON(user)
+	return c.JSON(users)
 }

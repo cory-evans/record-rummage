@@ -19,11 +19,27 @@ func (r *SpotifyRepository) GetPlaylistSnapshot(ctx context.Context, id spotify.
 	return snapshotID, nil
 }
 
-func (r *SpotifyRepository) GetAddedBy(ctx context.Context, playlistID string, trackID string) (string, error) {
-	var addedBy string
-	err := r.db.QueryRow(ctx, `SELECT added_by FROM spotify_Playlist_TrackT WHERE playlist_id = $1 AND track_id = $2`, playlistID, trackID).Scan(&addedBy)
+func (r *SpotifyRepository) GetAddedBy(ctx context.Context, playlistID string, trackID string) ([]string, error) {
+	var addedBy = make([]string, 0)
+	rows, err := r.db.Query(ctx, `
+SELECT DISTINCT added_by
+FROM spotify_Playlist_TrackT
+WHERE playlist_id = $1 AND track_id = $2`, playlistID, trackID)
+
 	if err != nil {
-		return "", err
+		return nil, err
+	}
+
+	defer rows.Close()
+
+	for rows.Next() {
+		var id string
+		err = rows.Scan(&id)
+		if err != nil {
+			return nil, err
+		}
+
+		addedBy = append(addedBy, id)
 	}
 
 	return addedBy, nil

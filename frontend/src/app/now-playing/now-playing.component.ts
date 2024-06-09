@@ -1,10 +1,11 @@
 import { CommonModule } from '@angular/common';
-import { Component, PLATFORM_ID } from '@angular/core';
+import { Component } from '@angular/core';
 import {
   BehaviorSubject,
   combineLatest,
+  filter,
   firstValueFrom,
-  of,
+  map,
   shareReplay,
   switchMap,
   tap,
@@ -25,19 +26,47 @@ export class NowPlayingComponent {
   timer$ = timer(0, 60_000);
   forceRefresh$ = new BehaviorSubject<void>(void 0);
 
-  constructor(private readonly http: HttpClient) {}
+  constructor(private readonly http: HttpClient) {
+    // every second check to see if we should force refresh
+    timer(1_000, 1_000)
+      .pipe(
+        switchMap(() => this.dueToEnd$),
+        map((dueToEnd) => {
+          const now = new Date();
+          return dueToEnd < now;
+        }),
+        filter((x) => x)
+      )
+      .subscribe(() => {
+        this.forceRefresh$.next();
+      });
+  }
 
   currentlyPlaying$ = combineLatest([this.timer$, this.forceRefresh$]).pipe(
     switchMap(() => this.http.get<Root>('/api/track/currently-playing')),
     shareReplay(1)
   );
 
+  dueToEnd$ = this.currentlyPlaying$.pipe(
+    map((x) => x.item.duration_ms - x.progress_ms),
+    map((ms) => {
+      const now = new Date();
+      now.setMilliseconds(now.getMilliseconds() + ms);
+
+      return now;
+    })
+  );
+
+  currentlyPlayingItem$ = this.currentlyPlaying$.pipe(map((x) => x.item));
+  isPlaying$ = this.currentlyPlaying$.pipe(map((x) => x.is_playing));
+
   refreshPlaylist() {
     // let id = '4CGbyFVJTDvQDDa7Pg8IaO';
     // this.http.post('/api/playlist/refresh?id=' + id, {}).subscribe(() => {});
   }
 
-  async togglePlayPause(is_playing: boolean) {
+  async togglePlayPause() {
+    const is_playing = await firstValueFrom(this.isPlaying$);
     await firstValueFrom(
       this.http
         .put('/api/track/playback', { is_playing })
@@ -70,34 +99,36 @@ export class NowPlayingComponent {
   }
 
   lastRevealedTrackId: string | null = null;
-  user: {
-    id: string;
-    display_name: string;
-    images: {
-      url: string;
-      height: number;
-      width: number;
-    }[];
-  } | null = null;
+  users:
+    | {
+        id: string;
+        display_name: string;
+        images: {
+          url: string;
+          height: number;
+          width: number;
+        }[];
+      }[]
+    | null = null;
   async reveal() {
     const track = await firstValueFrom(this.currentlyPlaying$);
 
     await firstValueFrom(
       this.http
-        .get<typeof this.user>(
+        .get<typeof this.users>(
           `/api/track/reveal?trackId=${track.item.id}&playlistId=${this.PlaylistID}`
         )
         .pipe(
           tap((resp) => {
             if (!resp) {
               console.log('Track not found in playlist');
-              this.user = null;
+              this.users = null;
               return;
             }
 
             this.lastRevealedTrackId = track.item.id;
 
-            this.user = resp;
+            this.users = resp;
           })
         )
     );

@@ -7,12 +7,19 @@
   </button>
 </div>
 } @else {
-<div class="absolute right-0 top-0 m-2">
+<div class="absolute right-0 top-0 m-2 flex space-x-2">
+  <button
+    type="button"
+    class="ui-btn ui-btn-circle"
+    (click)="nowPlaying.forceRefresh$.next()"
+  >
+    <app-icon icon="arrow-path" />
+  </button>
   <button type="button" class="ui-btn" (click)="logout()">
     <app-icon icon="lock-closed" />
     Logout
   </button>
 </div>
-<app-now-playing />
+<app-now-playing #nowPlaying />
 
 }
