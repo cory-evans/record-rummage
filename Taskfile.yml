@@ -9,6 +9,8 @@ vars:
 
 tasks:
   default:
+    env:
+      ENV: dev
     cmds:
       - gow -e go,mod run cmd/api/main.go
 

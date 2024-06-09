@@ -2,10 +2,13 @@ package api
 
 import (
 	"context"
+	"net/http"
 
+	"github.com/cory-evans/record-rummage/frontend"
 	"github.com/cory-evans/record-rummage/internal/config"
 	"github.com/cory-evans/record-rummage/internal/middleware"
 	"github.com/gofiber/fiber/v2"
+	"github.com/gofiber/fiber/v2/middleware/filesystem"
 	"github.com/gofiber/fiber/v2/middleware/logger"
 	"github.com/gofiber/fiber/v2/middleware/proxy"
 	"go.uber.org/fx"
@@ -37,15 +40,28 @@ func NewApi(p apiParams) *Api {
 		apiGroup.Mount(route.Pattern(), route.Handler())
 	}
 
-	mux.Get("/*", func(c *fiber.Ctx) error {
-		err := proxy.Do(c, "http://localhost:4200"+c.Path())
+	if p.Config.IsDev {
+		mux.Get("/*", func(c *fiber.Ctx) error {
+			err := proxy.Do(c, "http://localhost:4200"+c.Path())
+			if err != nil {
+				p.Logger.Error("proxy error", zap.Error(err))
+				return c.SendStatus(fiber.StatusInternalServerError)
+			}
+
+			return nil
+		})
+
+	} else {
+		fs, err := frontend.FS()
 		if err != nil {
-			p.Logger.Error("proxy error", zap.Error(err))
-			return c.SendStatus(fiber.StatusInternalServerError)
+			p.Logger.Error("error getting frontend FS", zap.Error(err))
 		}
 
-		return nil
-	})
+		mux.Use("/", filesystem.New(filesystem.Config{
+			Root:  http.FS(fs),
+			Index: "index.html",
+		}))
+	}
 
 	x := &Api{
 		server: mux,

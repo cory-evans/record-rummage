@@ -10,6 +10,7 @@ type ApplicationConfig struct {
 	SpotifyConfig spotifyConfig `mapstructure:"spotify"`
 	JWTSigningKey string        `mapstructure:"jwt_signing_key"`
 	DatabaseURL   string        `mapstructure:"database_url"`
+	IsDev         bool
 }
 
 func NewApplicationConfig() *ApplicationConfig {
@@ -29,6 +30,10 @@ func NewApplicationConfig() *ApplicationConfig {
 	if err != nil {
 		panic(err)
 	}
+
+	viper.BindEnv("ENV")
+
+	c.IsDev = viper.GetString("ENV") == "dev"
 
 	return &c
 }
