@@ -1,20 +1,21 @@
-import { AsyncPipe, JsonPipe } from '@angular/common';
+import { AsyncPipe, CommonModule, JsonPipe } from '@angular/common';
 import { HttpClient, HttpClientModule } from '@angular/common/http';
 import { TmplAstSwitchBlockCase } from '@angular/compiler';
 import { Component } from '@angular/core';
 import { map, shareReplay } from 'rxjs';
 import { NowPlayingComponent } from '../now-playing/now-playing.component';
 import { SharedModule } from '../shared/shared.module';
+import { RouterModule } from '@angular/router';
 
 @Component({
   selector: 'app-home',
   standalone: true,
   imports: [
     HttpClientModule,
-    AsyncPipe,
-    JsonPipe,
-    NowPlayingComponent,
+    CommonModule,
     SharedModule,
+    RouterModule,
+    NowPlayingComponent,
   ],
   templateUrl: './home.component.html',
 })

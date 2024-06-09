@@ -4,6 +4,7 @@ import (
 	"github.com/cory-evans/record-rummage/internal/api"
 	"github.com/cory-evans/record-rummage/internal/api/handlers/auth"
 	"github.com/cory-evans/record-rummage/internal/api/handlers/playlist"
+	"github.com/cory-evans/record-rummage/internal/api/handlers/remote"
 	"github.com/cory-evans/record-rummage/internal/api/handlers/track"
 	"github.com/cory-evans/record-rummage/internal/configfx"
 	"github.com/cory-evans/record-rummage/internal/middleware"
@@ -20,6 +21,7 @@ var Module = fx.Module("api",
 		AsRoute(auth.NewAuthHandler),
 		AsRoute(track.NewTrackHandler),
 		AsRoute(playlist.NewPlaylistHandler),
+		AsRoute(remote.NewRemoteHandler),
 	),
 	fx.Invoke(func(api *api.Api) {}),
 )

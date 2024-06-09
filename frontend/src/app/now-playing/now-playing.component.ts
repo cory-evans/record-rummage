@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { Component } from '@angular/core';
+import { Component, OnDestroy } from '@angular/core';
 import {
   BehaviorSubject,
   Subject,
@@ -9,11 +9,13 @@ import {
   map,
   shareReplay,
   switchMap,
+  takeUntil,
   tap,
   timer,
 } from 'rxjs';
 import { SharedModule } from '../shared/shared.module';
 import { HttpClient, HttpClientModule } from '@angular/common/http';
+import { RemoteService } from '../shared/services/remote.service';
 
 @Component({
   selector: 'app-now-playing',
@@ -21,16 +23,20 @@ import { HttpClient, HttpClientModule } from '@angular/common/http';
   imports: [CommonModule, SharedModule, HttpClientModule],
   templateUrl: './now-playing.component.html',
 })
-export class NowPlayingComponent {
+export class NowPlayingComponent implements OnDestroy {
   readonly PlaylistID = '4CGbyFVJTDvQDDa7Pg8IaO';
 
   timer$ = timer(0, 60_000);
   forceRefresh$ = new BehaviorSubject<void>(void 0);
 
-  constructor(private readonly http: HttpClient) {
+  constructor(
+    private readonly http: HttpClient,
+    private readonly remoteService: RemoteService
+  ) {
     // every second check to see if we should force refresh
     timer(1_000, 1_000)
       .pipe(
+        takeUntil(this._destroyed$),
         switchMap(() => this.dueToEnd$),
         map((dueToEnd) => {
           return dueToEnd < Date.now();
@@ -40,12 +46,41 @@ export class NowPlayingComponent {
       .subscribe(() => {
         this.forceRefresh$.next();
       });
+
+    this.remoteService.events().subscribe(async (evt) => {
+      switch (evt.Payload) {
+        case 'next':
+          this.nextTrack();
+          break;
+        case 'previous':
+          this.previousTrack();
+          break;
+        case 'playpause':
+          this.togglePlayPause();
+          break;
+        case 'revealhide':
+          const track = await firstValueFrom(this.currentlyPlayingItem$);
+          if (track.id === this.lastRevealedTrackId) {
+            this.lastRevealedTrackId = null;
+          } else {
+            this.reveal();
+          }
+          break;
+      }
+    });
+  }
+
+  private _destroyed$ = new Subject<void>();
+  ngOnDestroy(): void {
+    this._destroyed$.next();
+    this._destroyed$.complete();
   }
 
   private currentlyPlayingResponseTime$ = new BehaviorSubject<number>(
     Date.now()
   );
   currentlyPlaying$ = combineLatest([this.timer$, this.forceRefresh$]).pipe(
+    takeUntil(this._destroyed$),
     switchMap(() => this.http.get<Root>('/api/track/currently-playing')),
     tap(() => this.currentlyPlayingResponseTime$.next(Date.now())),
     shareReplay(1)
@@ -55,6 +90,7 @@ export class NowPlayingComponent {
     this.currentlyPlaying$,
     this.currentlyPlayingResponseTime$,
   ]).pipe(
+    filter(([x, t]) => x.is_playing && !!x.item),
     map(([x, t]) => {
       const msLeft = x.item.duration_ms - x.progress_ms;
       return t + msLeft;

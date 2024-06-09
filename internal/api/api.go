@@ -6,9 +6,10 @@ import (
 	"github.com/cory-evans/record-rummage/internal/config"
 	"github.com/cory-evans/record-rummage/internal/middleware"
 	"github.com/gofiber/fiber/v2"
-	"github.com/gofiber/fiber/v2/middleware/cors"
 	"github.com/gofiber/fiber/v2/middleware/logger"
+	"github.com/gofiber/fiber/v2/middleware/proxy"
 	"go.uber.org/fx"
+	"go.uber.org/zap"
 )
 
 type Api struct {
@@ -19,6 +20,7 @@ type apiParams struct {
 	fx.In
 
 	LC     fx.Lifecycle
+	Logger *zap.Logger
 	Routes []ApiRoute `group:"api-routes"`
 	Config *config.ApplicationConfig
 }
@@ -27,13 +29,23 @@ func NewApi(p apiParams) *Api {
 
 	mux := fiber.New()
 
-	mux.Use(cors.New())
-	mux.Use(logger.New())
-	mux.Use(middleware.NewSessionCookieMiddleware(p.Config))
+	apiGroup := mux.Group("/api")
+	apiGroup.Use(logger.New())
+	apiGroup.Use(middleware.NewSessionCookieMiddleware(p.Config))
 
 	for _, route := range p.Routes {
-		mux.Mount(route.Pattern(), route.Handler())
+		apiGroup.Mount(route.Pattern(), route.Handler())
 	}
+
+	mux.Get("/*", func(c *fiber.Ctx) error {
+		err := proxy.Do(c, "http://localhost:4200"+c.Path())
+		if err != nil {
+			p.Logger.Error("proxy error", zap.Error(err))
+			return c.SendStatus(fiber.StatusInternalServerError)
+		}
+
+		return nil
+	})
 
 	x := &Api{
 		server: mux,
