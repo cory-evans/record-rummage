@@ -7,9 +7,9 @@ import (
 	"github.com/cory-evans/record-rummage/frontend"
 	"github.com/cory-evans/record-rummage/internal/config"
 	"github.com/cory-evans/record-rummage/internal/middleware"
+	"github.com/gofiber/contrib/fiberzap/v2"
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/fiber/v2/middleware/filesystem"
-	"github.com/gofiber/fiber/v2/middleware/logger"
 	"github.com/gofiber/fiber/v2/middleware/proxy"
 	"go.uber.org/fx"
 	"go.uber.org/zap"
@@ -29,11 +29,14 @@ type apiParams struct {
 }
 
 func NewApi(p apiParams) *Api {
-
 	mux := fiber.New()
 
 	apiGroup := mux.Group("/api")
-	apiGroup.Use(logger.New())
+
+	apiGroup.Use(fiberzap.New(fiberzap.Config{
+		Logger: p.Logger,
+	}))
+
 	apiGroup.Use(middleware.NewSessionCookieMiddleware(p.Config))
 
 	for _, route := range p.Routes {

@@ -35,5 +35,5 @@ func (h *AuthHandler) Callback(c *fiber.Ctx) error {
 
 	middleware.SetSession(h.config, c, token, user.ID)
 
-	return c.Redirect("http://localhost:4200/")
+	return c.Redirect("/")
 }
