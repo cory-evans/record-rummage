@@ -9,8 +9,17 @@
 
 <div class="flex-1"></div>
 
-<div class="mt-16 max-w-md w-full mx-auto">
-  <div class="ui-card-actions justify-center mt-2">
+<div class="my-16 max-w-md w-full mx-auto">
+  <div class="flex gap-2 justify-center">
+    <button
+      type="button"
+      class="ui-btn ui-btn-circle ui-btn-outline"
+      (click)="send('refresh')"
+    >
+      <app-icon icon="arrow-path" />
+    </button>
+  </div>
+  <div class="flex gap-2 justify-center mt-2">
     <button
       type="button"
       class="ui-btn ui-btn-circle ui-btn-outline"

@@ -66,6 +66,9 @@ export class NowPlayingComponent implements OnDestroy {
             this.reveal();
           }
           break;
+        case 'refresh':
+          this.forceRefresh$.next();
+          break;
       }
     });
   }

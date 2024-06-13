@@ -7,8 +7,10 @@ import { Subject } from 'rxjs';
 })
 export class RemoteService {
   clientID = Math.random().toString(36).substring(7);
+
+  private protocol = window.location.protocol === 'https:' ? 'wss' : 'ws';
   ws = new WebSocket(
-    `ws://${window.location.host}/api/remote/ws/sub?clientID=${this.clientID}`
+    `${this.protocol}://${window.location.host}/api/remote/ws/sub?clientID=${this.clientID}`
   );
 
   private _events = new Subject<Message<PossibleMessages>>();
@@ -68,4 +70,9 @@ interface Message<T> {
   Metadata: Record<string, any>;
 }
 
-export type PossibleMessages = 'playpause' | 'next' | 'previous' | 'revealhide';
+export type PossibleMessages =
+  | 'playpause'
+  | 'next'
+  | 'previous'
+  | 'revealhide'
+  | 'refresh';
