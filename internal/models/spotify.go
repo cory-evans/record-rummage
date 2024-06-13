@@ -1,50 +1,21 @@
 package models
 
 import (
-	"encoding/json"
-	"errors"
 	"time"
 
 	"github.com/zmb3/spotify/v2"
 )
 
-type SpotifyImage struct {
-	URL    string `json:"url"`
-	Height int    `json:"height"`
-	Width  int    `json:"width"`
-}
-
-func (i *SpotifyImage) Scan(value interface{}) error {
-	src, ok := value.([]byte)
-	if !ok {
-		return errors.New("invalid type")
-	}
-
-	return json.Unmarshal(src, i)
-}
-
-func SpotifyImageFromList(src []spotify.Image) []SpotifyImage {
-	var images = make([]SpotifyImage, 0, len(src))
-	for _, i := range src {
-		images = append(images, SpotifyImage{
-			URL:    i.URL,
-			Height: int(i.Height),
-			Width:  int(i.Width),
-		})
-	}
-	return images
-}
-
 type SpotifyUser struct {
-	ID          string         `json:"id"`
-	DisplayName string         `json:"display_name"`
-	Images      []SpotifyImage `json:"images"`
+	ID          string            `json:"id" db:"id"`
+	DisplayName string            `json:"display_name" db:"display_name"`
+	Images      SpotifyImageArray `json:"images" db:"images"`
 }
 
 type SpotifyArtist struct {
-	ID     string         `json:"id"`
-	Name   string         `json:"name"`
-	Images []SpotifyImage `json:"images"`
+	ID     string            `json:"id"`
+	Name   string            `json:"name"`
+	Images SpotifyImageArray `json:"images"`
 }
 
 func SpotifyArtistFromSlice(src []spotify.SimpleArtist) []SpotifyArtist {
@@ -59,9 +30,9 @@ func SpotifyArtistFromSlice(src []spotify.SimpleArtist) []SpotifyArtist {
 }
 
 type SpotifyAlbum struct {
-	ID     string         `json:"id"`
-	Name   string         `json:"name"`
-	Images []SpotifyImage `json:"images"`
+	ID     string            `json:"id"`
+	Name   string            `json:"name"`
+	Images SpotifyImageArray `json:"images"`
 }
 
 type SpotifyTrack struct {
@@ -72,10 +43,10 @@ type SpotifyTrack struct {
 }
 
 type SpotifyPlaylist struct {
-	ID         string         `json:"id"`
-	SnapshotID string         `json:"snapshot_id"`
-	Name       string         `json:"name"`
-	Images     []SpotifyImage `json:"images"`
+	ID         string            `json:"id"`
+	SnapshotID string            `json:"snapshot_id"`
+	Name       string            `json:"name"`
+	Images     SpotifyImageArray `json:"images"`
 }
 
 type SpotifyPlaylistTrack struct {

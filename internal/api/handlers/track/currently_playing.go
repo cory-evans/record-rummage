@@ -3,7 +3,6 @@ package track
 import "github.com/gofiber/fiber/v2"
 
 func (h *TrackHandler) CurrentlyPlaying(c *fiber.Ctx) error {
-
 	client, err := h.spotifyClient.ForUser(c)
 	if err != nil {
 		return err
