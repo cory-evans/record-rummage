@@ -38,6 +38,8 @@ func NewTrackHandler(p trackHandlerParams) *TrackHandler {
 		spotifyClient: p.SpotifyClient,
 	}
 
+	x.router.Use(middleware.NewSpotifyTokenMiddleware(middleware.SpotifyTokenMiddlewareConfig{}, p.Config))
+
 	x.router.Get("/currently-playing", x.CurrentlyPlaying)
 	x.router.Put("/playback", x.Playback)
 	x.router.Post("/next", x.Next)

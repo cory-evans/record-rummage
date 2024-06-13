@@ -1,7 +1,6 @@
 package middleware
 
 import (
-	"encoding/json"
 	"time"
 
 	"github.com/cory-evans/record-rummage/internal/config"
@@ -68,17 +67,8 @@ func NewSpotifyTokenMiddleware(config SpotifyTokenMiddlewareConfig, appConfig *c
 			return c.Next()
 		}
 
-		tokenJson := c.Cookies("spotify_token")
-
-		if tokenJson == "" {
-			return c.Next()
-		}
-
-		var oauthToken oauth2.Token
-		err := json.Unmarshal([]byte(tokenJson), &oauthToken)
-		if err != nil {
-			return err
-		}
+		session := GetSession(c)
+		oauthToken := session.SpotifyToken
 
 		// check if expired, request a new token
 		if oauthToken.Expiry.UTC().Unix() < time.Now().UTC().Unix() {
@@ -88,29 +78,15 @@ func NewSpotifyTokenMiddleware(config SpotifyTokenMiddlewareConfig, appConfig *c
 				spotifyauth.WithClientSecret(appConfig.SpotifyConfig.ClientSecret),
 				spotifyauth.WithScopes(spotifyauth.ScopeUserReadPrivate, spotifyauth.ScopeUserReadEmail),
 			)
-			client := spotify.New(auth.Client(c.Context(), &oauthToken))
+			client := spotify.New(auth.Client(c.Context(), oauthToken))
 			newToken, err := client.Token()
 			if err != nil {
 				return err
 			}
 
-			oauthToken = *newToken
-
-			// save new token
-			tokenJson, err := json.Marshal(oauthToken)
-			if err != nil {
-				return err
-			}
-
-			c.Cookie(&fiber.Cookie{
-				Name:     "spotify_token",
-				Value:    string(tokenJson),
-				Domain:   "localhost",
-				HTTPOnly: true,
-			})
+			SetSession(appConfig, c, newToken, session.SpotifyUserID)
 		}
 
-		c.Locals("spotify_token", oauthToken)
 		return c.Next()
 	}
 }

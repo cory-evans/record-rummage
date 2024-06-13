@@ -40,6 +40,8 @@ func NewPlaylistHandler(p playlistHandlerParams) *PlaylistHandler {
 		spotifyClient: p.SpotifyClient,
 	}
 
+	x.router.Use(middleware.NewSpotifyTokenMiddleware(middleware.SpotifyTokenMiddlewareConfig{}, p.Config))
+
 	x.router.Post("/refresh", x.Refresh)
 
 	return x

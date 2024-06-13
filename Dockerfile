@@ -15,4 +15,10 @@ RUN GOOS=$TARGETOS GOARCH=$TARGETARCH go build -o /server cmd/api/main.go
 
 FROM alpine
 
-COPY --from=builder /server /server
+EXPOSE 80
+
+WORKDIR /app
+
+COPY --from=builder /server /app/server
+
+ENTRYPOINT [ "/app/server" ]

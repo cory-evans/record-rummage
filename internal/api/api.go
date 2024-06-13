@@ -37,7 +37,9 @@ func NewApi(p apiParams) *Api {
 		Logger: p.Logger,
 	}))
 
-	apiGroup.Use(middleware.NewSessionCookieMiddleware(p.Config))
+	apiGroup.Use(
+		middleware.NewSessionCookieMiddleware(p.Config),
+	)
 
 	for _, route := range p.Routes {
 		apiGroup.Mount(route.Pattern(), route.Handler())
@@ -72,7 +74,12 @@ func NewApi(p apiParams) *Api {
 
 	p.LC.Append(fx.Hook{
 		OnStart: func(ctx context.Context) error {
-			go x.server.Listen(":8080")
+			port := ":80"
+			if p.Config.IsDev {
+				port = ":8080"
+			}
+
+			go x.server.Listen(port)
 
 			return nil
 		},

@@ -13,9 +13,8 @@ import (
 type SessionCookie struct {
 	jwt.RegisteredClaims
 
-	SpotifyUserID string `json:"spotify_user_id"`
-
-	SpotifyToken *oauth2.Token `json:"spotify_token"`
+	SpotifyUserID string        `json:"spotify_user_id"`
+	SpotifyToken  *oauth2.Token `json:"spotify_token"`
 }
 
 const cookieKey = "session"
