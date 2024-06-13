@@ -1,26 +1,16 @@
 package database
 
 import (
-	"context"
 	"encoding/json"
 
 	"github.com/cory-evans/record-rummage/internal/models"
 )
 
-func (r *SpotifyRepository) GetUser(ctx context.Context, id string) (*models.SpotifyUser, error) {
+func (r *SpotifyRepository) GetUser(id string) (*models.SpotifyUser, error) {
 	sql := `SELECT id, display_name, images FROM spotify_UserT WHERE id = $1;`
 
-	row := r.db.QueryRow(ctx, sql, id)
-
 	u := &models.SpotifyUser{}
-	imageJson := ""
-
-	err := row.Scan(&u.ID, &u.DisplayName, &imageJson)
-	if err != nil {
-		return nil, err
-	}
-
-	err = json.Unmarshal([]byte(imageJson), &u.Images)
+	err := r.db.QueryRowx(sql, id).StructScan(u)
 	if err != nil {
 		return nil, err
 	}
@@ -28,7 +18,7 @@ func (r *SpotifyRepository) GetUser(ctx context.Context, id string) (*models.Spo
 	return u, nil
 }
 
-func (r *SpotifyRepository) CreateOrUpdateUser(ctx context.Context, user *models.SpotifyUser) error {
+func (r *SpotifyRepository) CreateOrUpdateUser(user *models.SpotifyUser) error {
 	sql := `
 MERGE INTO spotify_UserT AS target
 USING (
@@ -50,7 +40,7 @@ WHEN NOT MATCHED THEN
 		return err
 	}
 
-	_, err = r.db.Exec(ctx, sql, user.ID, user.DisplayName, imageJson)
+	_, err = r.db.Exec(sql, user.ID, user.DisplayName, imageJson)
 	if err != nil {
 		return err
 	}

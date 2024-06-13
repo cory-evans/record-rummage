@@ -1,6 +1,8 @@
 package models
 
 import (
+	"encoding/json"
+	"errors"
 	"time"
 
 	"github.com/zmb3/spotify/v2"
@@ -10,6 +12,15 @@ type SpotifyImage struct {
 	URL    string `json:"url"`
 	Height int    `json:"height"`
 	Width  int    `json:"width"`
+}
+
+func (i *SpotifyImage) Scan(value interface{}) error {
+	src, ok := value.([]byte)
+	if !ok {
+		return errors.New("invalid type")
+	}
+
+	return json.Unmarshal(src, i)
 }
 
 func SpotifyImageFromList(src []spotify.Image) []SpotifyImage {

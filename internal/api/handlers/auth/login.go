@@ -9,7 +9,6 @@ func (h *AuthHandler) Login(c *fiber.Ctx) error {
 	state := util.GenerateRandomString(16)
 
 	err := h.spotifyRepo.CreateLoginState(
-		c.Context(),
 		state,
 	)
 

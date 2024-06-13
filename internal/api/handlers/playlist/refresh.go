@@ -28,13 +28,13 @@ func (h *PlaylistHandler) Refresh(c *fiber.Ctx) error {
 		return err
 	}
 
-	savedId, _ := h.spotifyRepo.GetPlaylistSnapshot(c.Context(), p.ID)
+	savedId, _ := h.spotifyRepo.GetPlaylistSnapshot(p.ID)
 	if savedId != p.SnapshotID {
 		//changed
 
 		h.logger.Info("playlist changed", zap.String("id", p.ID.String()))
 
-		h.spotifyRepo.CreateOrUpdatePlaylist(c.Context(), models.SpotifyPlaylist{
+		h.spotifyRepo.CreateOrUpdatePlaylist(models.SpotifyPlaylist{
 			ID:         p.ID.String(),
 			SnapshotID: p.SnapshotID,
 			Name:       p.Name,
@@ -49,7 +49,7 @@ func (h *PlaylistHandler) Refresh(c *fiber.Ctx) error {
 				return
 			}
 
-			h.spotifyRepo.Refresh(context.Background(), p.ID.String(), tracks)
+			h.spotifyRepo.Refresh(p.ID.String(), tracks)
 		}()
 	}
 

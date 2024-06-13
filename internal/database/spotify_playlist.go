@@ -1,17 +1,16 @@
 package database
 
 import (
-	"context"
 	"encoding/json"
 
 	"github.com/cory-evans/record-rummage/internal/models"
-	"github.com/jackc/pgx/v5"
+	"github.com/jmoiron/sqlx"
 	"github.com/zmb3/spotify/v2"
 )
 
-func (r *SpotifyRepository) GetPlaylistSnapshot(ctx context.Context, id spotify.ID) (string, error) {
+func (r *SpotifyRepository) GetPlaylistSnapshot(id spotify.ID) (string, error) {
 	var snapshotID string
-	err := r.db.QueryRow(ctx, `SELECT snapshot_id FROM spotify_PlaylistT WHERE id = $1`, id).Scan(&snapshotID)
+	err := r.db.QueryRow(`SELECT snapshot_id FROM spotify_PlaylistT WHERE id = $1`, id).Scan(&snapshotID)
 	if err != nil {
 		return "", err
 	}
@@ -19,9 +18,9 @@ func (r *SpotifyRepository) GetPlaylistSnapshot(ctx context.Context, id spotify.
 	return snapshotID, nil
 }
 
-func (r *SpotifyRepository) GetAddedBy(ctx context.Context, playlistID string, trackID string) ([]string, error) {
+func (r *SpotifyRepository) GetAddedBy(playlistID string, trackID string) ([]string, error) {
 	var addedBy = make([]string, 0)
-	rows, err := r.db.Query(ctx, `
+	err := r.db.Select(&addedBy, `
 SELECT DISTINCT added_by
 FROM spotify_Playlist_TrackT
 WHERE playlist_id = $1 AND track_id = $2`, playlistID, trackID)
@@ -30,22 +29,10 @@ WHERE playlist_id = $1 AND track_id = $2`, playlistID, trackID)
 		return nil, err
 	}
 
-	defer rows.Close()
-
-	for rows.Next() {
-		var id string
-		err = rows.Scan(&id)
-		if err != nil {
-			return nil, err
-		}
-
-		addedBy = append(addedBy, id)
-	}
-
 	return addedBy, nil
 }
 
-func (r *SpotifyRepository) CreateOrUpdatePlaylist(ctx context.Context, playlist models.SpotifyPlaylist) error {
+func (r *SpotifyRepository) CreateOrUpdatePlaylist(playlist models.SpotifyPlaylist) error {
 	sql := `
         MERGE INTO spotify_PlaylistT AS target
         USING (
@@ -68,27 +55,27 @@ func (r *SpotifyRepository) CreateOrUpdatePlaylist(ctx context.Context, playlist
 		return err
 	}
 
-	_, err = r.db.Exec(ctx, sql, playlist.ID, playlist.SnapshotID, playlist.Name, imageJson)
+	_, err = r.db.Exec(sql, playlist.ID, playlist.SnapshotID, playlist.Name, imageJson)
 
 	return err
 }
 
-func (r *SpotifyRepository) Refresh(ctx context.Context, playlistID string, tracks []spotify.PlaylistItem) error {
+func (r *SpotifyRepository) Refresh(playlistID string, tracks []spotify.PlaylistItem) error {
 	// start a transaction
-	tx, err := r.db.Begin(ctx)
+	tx, err := r.db.Beginx()
 	if err != nil {
 		return err
 	}
-	defer tx.Rollback(ctx)
+	defer tx.Rollback()
 
 	// delete all tracks for the playlist
-	_, err = tx.Exec(context.Background(), `DELETE FROM spotify_Playlist_TrackT WHERE playlist_id = $1`, playlistID)
+	_, err = tx.Exec(`DELETE FROM spotify_Playlist_TrackT WHERE playlist_id = $1`, playlistID)
 	if err != nil {
 		return err
 	}
 
 	// insert all tracks for the playlist
-	stmt, err := tx.Prepare(context.Background(), "insert_spotify_Playlist_TrackT", `INSERT INTO spotify_Playlist_TrackT (playlist_id, track_id, added_at, added_by) VALUES ($1, $2, $3, $4)`)
+	stmt, err := tx.Prepare(`INSERT INTO spotify_Playlist_TrackT (playlist_id, track_id, added_at, added_by) VALUES ($1, $2, $3, $4)`)
 	if err != nil {
 		return err
 	}
@@ -100,7 +87,7 @@ func (r *SpotifyRepository) Refresh(ctx context.Context, playlistID string, trac
 			continue
 		}
 
-		createOrUpdateTrack(ctx, tx, models.SpotifyTrack{
+		createOrUpdateTrack(tx, models.SpotifyTrack{
 			ID:      track.ID.String(),
 			Name:    track.Name,
 			Artists: models.SpotifyArtistFromSlice(track.Artists),
@@ -111,16 +98,16 @@ func (r *SpotifyRepository) Refresh(ctx context.Context, playlistID string, trac
 			},
 		})
 
-		_, err = tx.Exec(ctx, stmt.SQL, playlistID, t.Track.Track.ID.String(), t.AddedAt, t.AddedBy.ID)
+		_, err = stmt.Exec(playlistID, t.Track.Track.ID.String(), t.AddedAt, t.AddedBy.ID)
 		if err != nil {
 			return err
 		}
 	}
 
-	return tx.Commit(ctx)
+	return tx.Commit()
 }
 
-func createOrUpdateTrack(ctx context.Context, tx pgx.Tx, track models.SpotifyTrack) error {
+func createOrUpdateTrack(tx *sqlx.Tx, track models.SpotifyTrack) error {
 	sql := `
 MERGE INTO spotify_TrackT AS target
 USING (
@@ -147,7 +134,7 @@ WHEN NOT MATCHED THEN
 		return err
 	}
 
-	_, err = tx.Exec(ctx, sql, track.ID, track.Name, albumJson, artistJson)
+	_, err = tx.Exec(sql, track.ID, track.Name, albumJson, artistJson)
 
 	return err
 }

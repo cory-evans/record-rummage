@@ -10,7 +10,6 @@ func (h *AuthHandler) Callback(c *fiber.Ctx) error {
 	code := c.Query("code")
 
 	err := h.spotifyRepo.CheckLoginState(
-		c.Context(),
 		state,
 		true,
 	)

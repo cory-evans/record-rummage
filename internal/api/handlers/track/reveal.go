@@ -10,7 +10,7 @@ func (h *TrackHandler) Reveal(c *fiber.Ctx) error {
 	trackId := c.Query("trackId")
 	playlistId := c.Query("playlistId")
 
-	addedBy, err := h.spotifyRepo.GetAddedBy(c.Context(), playlistId, trackId)
+	addedBy, err := h.spotifyRepo.GetAddedBy(playlistId, trackId)
 	if err != nil {
 		return c.JSON(nil)
 	}
@@ -18,7 +18,7 @@ func (h *TrackHandler) Reveal(c *fiber.Ctx) error {
 	var users = make([]*models.SpotifyUser, 0)
 
 	for _, id := range addedBy {
-		user, err := h.spotifyRepo.GetUser(c.Context(), id)
+		user, err := h.spotifyRepo.GetUser(id)
 		if err != nil {
 			client, err := h.spotifyClient.ForUser(c)
 			if err != nil {
@@ -36,7 +36,7 @@ func (h *TrackHandler) Reveal(c *fiber.Ctx) error {
 				Images:      models.SpotifyImageFromList(spotifyUser.Images),
 			}
 
-			h.spotifyRepo.CreateOrUpdateUser(c.Context(), user)
+			h.spotifyRepo.CreateOrUpdateUser(user)
 		}
 
 		users = append(users, user)
