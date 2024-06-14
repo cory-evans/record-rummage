@@ -68,6 +68,11 @@ func NewSpotifyTokenMiddleware(config SpotifyTokenMiddlewareConfig, appConfig *c
 		}
 
 		session := GetSession(c)
+
+		if (session == nil) || (session.SpotifyToken == nil) {
+			return fiber.ErrUnauthorized
+		}
+
 		oauthToken := session.SpotifyToken
 
 		// check if expired, request a new token
