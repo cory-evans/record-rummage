@@ -3,15 +3,15 @@
     class="ui-card bg-base-100 shadow-xl border"
     *ngIf="currentlyPlayingItem$ | async as item"
   >
-    <figure>
+    <figure #wrapper [ngStyle]="{ 'height.px': wrapper?.offsetWidth }">
       <img
         [src]="pickBigestImage(item.album.images)"
         *ngIf="item.id !== lastRevealedTrackId"
-        class="object-cover sm:w-[480px] sm:h-[480px] w-full h-full"
+        class="object-cover sm:w-[480px] w-full"
       />
       <div
         *ngIf="item.id === lastRevealedTrackId"
-        class="flex flex-col justify-center sm:w-[480px] sm:h-[480px] w-full h-full p-2"
+        class="flex flex-col justify-center sm:w-[480px] w-full p-2"
       >
         @for (user of users; track user.id){
         <h3 class="text-center text-4xl font-semibold">
@@ -19,6 +19,8 @@
         </h3>
 
         <div class="ui-divider ui-divider-primary" *ngIf="!$last"></div>
+        } @if (!users || users.length === 0) {
+        <h3 class="text-center text-4xl font-semibold italic">Nobody</h3>
         }
       </div>
     </figure>
