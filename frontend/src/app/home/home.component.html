@@ -7,24 +7,40 @@
   </button>
 </div>
 } @else {
-<div class="flex justify-between">
-  <div class="flex space-x-2">
-    <a routerLink="/remote" class="ui-btn ui-btn-circle">
-      <app-icon icon="device-phone-mobile" />
-    </a>
+<div class="ui-dropdown ui-dropdown-end w-48">
+  <div
+    tabindex="0"
+    class="ui-btn ui-btn-ghost w-full justify-start"
+    role="button"
+  >
+    <app-icon icon="bars-3"></app-icon>
+    <span>Menu</span>
   </div>
-  <div class="flex space-x-2">
-    <button
-      type="button"
-      class="ui-btn ui-btn-circle"
-      (click)="nowPlaying.forceRefresh$.next()"
-    >
-      <app-icon icon="arrow-path" />
-    </button>
-    <button type="button" class="ui-btn" (click)="logout()">
-      <app-icon icon="lock-closed" />
-      Logout
-    </button>
+  <div
+    tabindex="0"
+    class="ui-dropdown-content z-[1] w-48 bg-base-200 text-base-content rounded-box shadow-sm"
+  >
+    <div class="grid grid-cols-1 gap-2 p-2">
+      <a routerLink="/remote" class="ui-btn ui-btn-primary">
+        <app-icon icon="device-phone-mobile" />
+        <span>Remote</span>
+      </a>
+      <button
+        type="button"
+        class="ui-btn ui-btn-primary"
+        (click)="nowPlaying.forceRefresh$.next()"
+      >
+        <app-icon icon="arrow-path" />
+        <span>Refresh</span>
+      </button>
+
+      <hr class="ui-divider my-0" />
+
+      <button type="button" class="ui-btn ui-btn-accent" (click)="logout()">
+        <app-icon icon="lock-closed" />
+        <span>Logout</span>
+      </button>
+    </div>
   </div>
 </div>
 

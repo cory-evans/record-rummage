@@ -1,4 +1,4 @@
-<div class="mx-auto mt-16" style="max-width: 480px">
+<div class="mx-auto max-w-[480px]">
   <div
     class="ui-card bg-base-100 shadow-xl border"
     *ngIf="currentlyPlayingItem$ | async as item"
@@ -7,13 +7,11 @@
       <img
         [src]="pickBigestImage(item.album.images)"
         *ngIf="item.id !== lastRevealedTrackId"
-        class="object-cover"
-        style="width: 480px; height: 480px"
+        class="object-cover sm:w-[480px] sm:h-[480px] w-full h-full"
       />
       <div
-        style="width: 480px; height: 480px"
         *ngIf="item.id === lastRevealedTrackId"
-        class="flex flex-col justify-center h-full p-2"
+        class="flex flex-col justify-center sm:w-[480px] sm:h-[480px] w-full h-full p-2"
       >
         @for (user of users; track user.id){
         <h3 class="text-center text-4xl font-semibold">
