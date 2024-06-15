@@ -3,7 +3,11 @@
     class="ui-card bg-base-100 shadow-xl border"
     *ngIf="currentlyPlayingItem$ | async as item"
   >
-    <figure #wrapper [ngStyle]="{ 'height.px': wrapper?.offsetWidth }">
+    <figure
+      #wrapper
+      [ngStyle]="{ 'height.px': wrapper?.offsetWidth }"
+      class="relative"
+    >
       <img
         [src]="pickBigestImage(item.album.images)"
         *ngIf="item.id !== lastRevealedTrackId"
@@ -60,7 +64,7 @@
         <button
           *ngIf="item.id !== lastRevealedTrackId"
           type="button"
-          class="ui-btn ui-btn-primary w-full"
+          class="ui-btn ui-btn-primary rounded-box w-full"
           (click)="reveal()"
         >
           <app-icon icon="eye" />
@@ -69,7 +73,7 @@
         <button
           *ngIf="item.id === lastRevealedTrackId"
           type="button"
-          class="ui-btn ui-btn-primary w-full"
+          class="ui-btn ui-btn-primary rounded-box w-full"
           (click)="lastRevealedTrackId = null"
         >
           <app-icon icon="eye-slash" />

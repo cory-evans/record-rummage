@@ -82,6 +82,7 @@ export class NowPlayingComponent implements OnDestroy {
   private currentlyPlayingResponseTime$ = new BehaviorSubject<number>(
     Date.now()
   );
+
   currentlyPlaying$ = combineLatest([this.timer$, this.forceRefresh$]).pipe(
     takeUntil(this._destroyed$),
     switchMap(() => this.http.get<Root>('/api/track/currently-playing')),
@@ -118,7 +119,7 @@ export class NowPlayingComponent implements OnDestroy {
         tap(() => {
           setTimeout(() => {
             this.forceRefresh$.next();
-          }, 1000);
+          }, 2000);
         })
       )
     );
@@ -130,7 +131,7 @@ export class NowPlayingComponent implements OnDestroy {
         tap(() => {
           setTimeout(() => {
             this.forceRefresh$.next();
-          }, 1000);
+          }, 2000);
         })
       )
     );
@@ -167,12 +168,21 @@ export class NowPlayingComponent implements OnDestroy {
             this.lastRevealedTrackId = track.item.id;
 
             this.users = resp;
+          }),
+          tap(() => {
+            setTimeout(() => {
+              this.nextTrack();
+            }, 5000);
           })
         )
     );
   }
 
   pickBigestImage(images: { url: string; height: number; width: number }[]) {
+    if (images.length === 0) {
+      return null;
+    }
+
     return images.reduce((prev, curr) =>
       prev.height * prev.width > curr.height * curr.width ? prev : curr
     ).url;

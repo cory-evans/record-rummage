@@ -46,9 +46,6 @@ export class RemoteService {
   private processEvent(evt: MessageEvent) {
     let data: Message<PossibleMessages>;
     try {
-      // const b64 = atob
-      console.log('Received:', evt.data);
-
       const rawMsg = JSON.parse(evt.data) as Message<string>;
       data = {
         UUID: rawMsg.UUID,
