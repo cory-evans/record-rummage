@@ -2,9 +2,11 @@ package api
 
 import (
 	"context"
+	"errors"
 	"net/http"
+	"os"
+	"path"
 
-	"github.com/cory-evans/record-rummage/frontend"
 	"github.com/cory-evans/record-rummage/internal/config"
 	"github.com/cory-evans/record-rummage/internal/middleware"
 	"github.com/gofiber/contrib/fiberzap/v2"
@@ -57,13 +59,17 @@ func NewApi(p apiParams) *Api {
 		})
 
 	} else {
-		fs, err := frontend.FS()
-		if err != nil {
-			p.Logger.Error("error getting frontend FS", zap.Error(err))
+		// make sure path exists
+		_, err := os.Stat(path.Join("wwwroot", "index.html"))
+		if errors.Is(err, os.ErrNotExist) {
+			p.Logger.Error("index.html does not exist", zap.Error(err))
+			os.Exit(1)
 		}
 
 		mux.Use("/", filesystem.New(filesystem.Config{
-			Root:  http.FS(fs),
+			Root: NewSpaFileSystem(
+				http.Dir("wwwroot"),
+			),
 			Index: "index.html",
 		}))
 	}
