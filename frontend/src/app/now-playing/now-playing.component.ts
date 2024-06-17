@@ -5,11 +5,13 @@ import {
   Subject,
   combineLatest,
   filter,
+  finalize,
   firstValueFrom,
   map,
   shareReplay,
   switchMap,
   takeUntil,
+  takeWhile,
   tap,
   timer,
 } from 'rxjs';
@@ -24,8 +26,6 @@ import { RemoteService } from '../shared/services/remote.service';
   templateUrl: './now-playing.component.html',
 })
 export class NowPlayingComponent implements OnDestroy {
-  readonly PlaylistID = '4CGbyFVJTDvQDDa7Pg8IaO';
-
   timer$ = timer(0, 60_000);
   forceRefresh$ = new BehaviorSubject<void>(void 0);
 
@@ -46,6 +46,10 @@ export class NowPlayingComponent implements OnDestroy {
       .subscribe(() => {
         this.forceRefresh$.next();
       });
+
+    this.revealprogress$.subscribe((s) => {
+      console.log('Reveal for', s);
+    });
 
     this.remoteService.events().subscribe(async (evt) => {
       switch (evt.Payload) {
@@ -88,6 +92,12 @@ export class NowPlayingComponent implements OnDestroy {
     switchMap(() => this.http.get<Root>('/api/track/currently-playing')),
     tap(() => this.currentlyPlayingResponseTime$.next(Date.now())),
     shareReplay(1)
+  );
+
+  currentContext$ = this.currentlyPlaying$.pipe(map((x) => x.context));
+  currentPlaylistID$ = this.currentContext$.pipe(
+    filter((x) => x.type === 'playlist'),
+    map((x) => x.uri.split(':').pop()!)
   );
 
   dueToEnd$ = combineLatest([
@@ -151,11 +161,12 @@ export class NowPlayingComponent implements OnDestroy {
     | null = null;
   async reveal() {
     const track = await firstValueFrom(this.currentlyPlaying$);
+    const playlistId = await firstValueFrom(this.currentPlaylistID$);
 
     await firstValueFrom(
       this.http
         .get<typeof this.users>(
-          `/api/track/reveal?trackId=${track.item.id}&playlistId=${this.PlaylistID}`
+          `/api/track/reveal?trackId=${track.item.id}&playlistId=${playlistId}`
         )
         .pipe(
           tap((resp) => {
@@ -170,9 +181,7 @@ export class NowPlayingComponent implements OnDestroy {
             this.users = resp;
           }),
           tap(() => {
-            setTimeout(() => {
-              this.nextTrack();
-            }, 5000);
+            this.revealFor$.next(5);
           })
         )
     );
@@ -187,6 +196,21 @@ export class NowPlayingComponent implements OnDestroy {
       prev.height * prev.width > curr.height * curr.width ? prev : curr
     ).url;
   }
+
+  revealFor$ = new Subject<number>();
+  revealprogress$ = this.revealFor$.pipe(
+    map((s) => s * 1000),
+    switchMap((msToWait) => {
+      const start = Date.now();
+
+      return timer(0, 25).pipe(
+        map(() => (Date.now() - start) / msToWait),
+        map((progress) => Math.min(progress, 1)),
+        takeWhile((progress) => progress < 1, true),
+        finalize(() => this.nextTrack())
+      );
+    })
+  );
 }
 export interface Root {
   timestamp: number;

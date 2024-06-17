@@ -12,7 +12,7 @@ module.exports = {
   daisyui: {
     prefix: 'ui-',
     logs: true,
-    themes: ["light", "dark", "cupcake"]
+    themes: ["light", "dark"]
   }
 }
 

@@ -17,15 +17,27 @@
         *ngIf="item.id === lastRevealedTrackId"
         class="flex flex-col justify-center sm:w-[480px] w-full p-2"
       >
-        @for (user of users; track user.id){
-        <h3 class="text-center text-4xl font-semibold">
-          {{ user.display_name }}
-        </h3>
+        <div>
+          @for (user of users; track user.id){
+          <h3 class="text-center text-4xl font-semibold">
+            {{ user.display_name }}
+          </h3>
 
-        <div class="ui-divider ui-divider-primary" *ngIf="!$last"></div>
-        } @if (!users || users.length === 0) {
-        <h3 class="text-center text-4xl font-semibold italic">Nobody</h3>
-        }
+          <div class="ui-divider ui-divider-primary" *ngIf="!$last"></div>
+          } @if (!users || users.length === 0) {
+          <h3 class="text-center text-4xl font-semibold italic">Nobody</h3>
+          }
+        </div>
+      </div>
+      <div
+        class="absolute bottom-0 left-2 right-2"
+        [ngClass]="{ hidden: item.id !== lastRevealedTrackId }"
+      >
+        <progress
+          class="ui-progress ui-progress-primary"
+          max="1"
+          [value]="revealprogress$ | async"
+        ></progress>
       </div>
     </figure>
     <div class="ui-card-body">
