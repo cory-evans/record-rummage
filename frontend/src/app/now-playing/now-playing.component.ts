@@ -8,6 +8,7 @@ import {
   finalize,
   firstValueFrom,
   map,
+  merge,
   shareReplay,
   switchMap,
   takeUntil,
@@ -47,10 +48,6 @@ export class NowPlayingComponent implements OnDestroy {
         this.forceRefresh$.next();
       });
 
-    this.revealprogress$.subscribe((s) => {
-      console.log('Reveal for', s);
-    });
-
     this.remoteService.events().subscribe(async (evt) => {
       switch (evt.Payload) {
         case 'next':
@@ -87,12 +84,19 @@ export class NowPlayingComponent implements OnDestroy {
     Date.now()
   );
 
-  currentlyPlaying$ = combineLatest([this.timer$, this.forceRefresh$]).pipe(
+  private readonly nextTrack$ = new Subject<Root>();
+
+  private _currentlyPlaying$ = combineLatest([
+    this.timer$,
+    this.forceRefresh$,
+  ]).pipe(
     takeUntil(this._destroyed$),
     switchMap(() => this.http.get<Root>('/api/track/currently-playing')),
     tap(() => this.currentlyPlayingResponseTime$.next(Date.now())),
     shareReplay(1)
   );
+
+  currentlyPlaying$ = merge(this._currentlyPlaying$, this.nextTrack$);
 
   currentContext$ = this.currentlyPlaying$.pipe(map((x) => x.context));
   currentPlaylistID$ = this.currentContext$.pipe(
@@ -124,12 +128,25 @@ export class NowPlayingComponent implements OnDestroy {
   }
 
   async nextTrack() {
+    const currentlyPlaying = await firstValueFrom(this.currentlyPlaying$);
     await firstValueFrom(
-      this.http.post('/api/track/next', {}).pipe(
-        tap(() => {
+      this.http.post<{ queue: Root['item'][] }>('/api/track/next', {}).pipe(
+        tap((q) => {
+          if (
+            q.queue.length > 0 &&
+            q.queue[0].id !== currentlyPlaying.item.id
+          ) {
+            this.nextTrack$.next({
+              context: currentlyPlaying.context,
+              is_playing: true,
+              progress_ms: 0,
+              timestamp: Date.now(),
+              item: q.queue[0],
+            });
+          }
           setTimeout(() => {
             this.forceRefresh$.next();
-          }, 2000);
+          }, 4e3);
         })
       )
     );
@@ -141,7 +158,7 @@ export class NowPlayingComponent implements OnDestroy {
         tap(() => {
           setTimeout(() => {
             this.forceRefresh$.next();
-          }, 2000);
+          }, 4e3);
         })
       )
     );
