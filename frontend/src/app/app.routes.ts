@@ -13,6 +13,11 @@ export const routes: Routes = [
     component: SettingsComponent,
   },
   {
+    path: 'library',
+    loadComponent: () =>
+      import('./library/library.component').then((m) => m.LibraryComponent),
+  },
+  {
     path: '',
     component: HomeComponent,
   },

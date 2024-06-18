@@ -1,0 +1,59 @@
+<div class="max-w-md mx-auto">
+  @if (loading) {
+
+  <progress
+    max="1"
+    [value]="progress$ | async"
+    class="ui-progress ui-progress-primary"
+  ></progress>
+
+  } @else {
+  <div class="h-2"></div>
+  }
+  <!--  -->
+  @for (item of items$|async; track $index) {
+  <div class="flex">
+    @if (item.images?.length) {
+    <img [src]="item.images[0].url" alt="" class="w-12 h-12" />
+    } @else {
+    <div class="w-12 h-12"></div>
+    }
+
+    <div class="flex-1 ml-2 flex flex-col">
+      <h3 class="text-lg font-semibold">{{ item.name }}</h3>
+      <span>Total Tracks: {{ item.tracks.total }}</span>
+    </div>
+
+    <div class="w-12">
+      <button
+        type="button"
+        class="ui-btn ui-btn-circle"
+        (click)="refresh(item.id)"
+        [disabled]="loading"
+      >
+        <app-icon icon="arrow-path" />
+      </button>
+    </div>
+  </div>
+
+  <div class="ui-divider my-0" *ngIf="!$last"></div>
+  }
+
+  <div class="mt-4 flex justify-center">
+    <div class="ui-join">
+      @for (item of nPages$|async; track item.idx) {
+      <button
+        type="button"
+        class="ui-btn ui-join-item"
+        [ngClass]="{
+          'ui-btn-active': item.active,
+          'ui-btn-disabled': item.active
+        }"
+        (click)="page$.next(item.idx)"
+      >
+        {{ item.idx }}
+      </button>
+      }
+    </div>
+  </div>
+</div>
