@@ -1,6 +1,7 @@
 package middleware
 
 import (
+	"net/http"
 	"time"
 
 	"github.com/cory-evans/record-rummage/internal/config"
@@ -92,6 +93,22 @@ func NewSpotifyTokenMiddleware(config SpotifyTokenMiddlewareConfig, appConfig *c
 			SetSession(appConfig, c, newToken, session.SpotifyUserID)
 		}
 
-		return c.Next()
+		err := c.Next()
+
+		if err == nil {
+			return nil
+		}
+
+		if sErr, ok := err.(spotify.Error); ok {
+			if sErr.Status == http.StatusUnauthorized {
+				// clear token
+				ClearSession(c)
+
+				return fiber.ErrUnauthorized
+			}
+		}
+
+		return err
+
 	}
 }

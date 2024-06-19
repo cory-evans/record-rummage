@@ -41,8 +41,10 @@ func (h *PlaylistHandler) Refresh(c *fiber.Ctx) error {
 			Images:     models.SpotifyImageFromList(p.Images),
 		})
 
+		h.CurrentlyWorkingPlaylists[playlistId] = 0
+
 		go func() {
-			tracks, err := getAllItemsForPlaylist(client, p.ID)
+			tracks, err := h.getAllItemsForPlaylist(client, p.ID)
 			if err != nil {
 				h.logger.Error("failed to get playlist items", zap.Error(err))
 
@@ -57,7 +59,7 @@ func (h *PlaylistHandler) Refresh(c *fiber.Ctx) error {
 }
 
 // get all tracks
-func getAllItemsForPlaylist(client *spotify.Client, playlistID spotify.ID) ([]spotify.PlaylistItem, error) {
+func (h *PlaylistHandler) getAllItemsForPlaylist(client *spotify.Client, playlistID spotify.ID) ([]spotify.PlaylistItem, error) {
 	var items []spotify.PlaylistItem
 	pageSize := 50
 	// get the first 100 tracks
@@ -65,7 +67,12 @@ func getAllItemsForPlaylist(client *spotify.Client, playlistID spotify.ID) ([]sp
 	if err != nil {
 		return nil, err
 	}
+
+	playlistIDString := string(playlistID)
+
 	items = append(items, playlist.Items...)
+	h.CurrentlyWorkingPlaylists[playlistIDString] = float64(len(items)) / float64(playlist.Total)
+
 	// get the rest of the tracks
 	pageNo := 1
 	for playlist.Next != "" {
@@ -82,9 +89,33 @@ func getAllItemsForPlaylist(client *spotify.Client, playlistID spotify.ID) ([]sp
 
 		items = append(items, playlist.Items...)
 
+		h.CurrentlyWorkingPlaylists[playlistIDString] = float64(len(items)) / float64(playlist.Total)
+
 		pageNo++
 		time.Sleep(100 * time.Millisecond)
 	}
 
+	delete(h.CurrentlyWorkingPlaylists, playlistIDString)
+
 	return items, nil
+}
+
+func (h *PlaylistHandler) RefreshProgress(c *fiber.Ctx) error {
+
+	playlistId := c.Query("id")
+
+	if playlistId == "" {
+		return fiber.NewError(fiber.StatusBadRequest, "missing playlist id")
+	}
+
+	var progress float64 = 1
+
+	if p, ok := h.CurrentlyWorkingPlaylists[playlistId]; ok {
+		progress = p
+	}
+
+	return c.JSON(fiber.Map{
+		"progress":   progress,
+		"playlistID": playlistId,
+	})
 }

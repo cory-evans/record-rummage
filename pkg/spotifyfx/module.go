@@ -21,7 +21,9 @@ func NewSpotifyAuth(appConfig *config.ApplicationConfig) *spotifyauth.Authentica
 			spotifyauth.ScopeUserReadPrivate,
 			spotifyauth.ScopeUserReadEmail,
 			spotifyauth.ScopeUserReadCurrentlyPlaying,
+			spotifyauth.ScopeUserReadPlaybackState,
 			spotifyauth.ScopeUserModifyPlaybackState,
+			spotifyauth.ScopePlaylistReadPrivate,
 		),
 	)
 }

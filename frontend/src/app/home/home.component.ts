@@ -6,6 +6,7 @@ import { map, shareReplay } from 'rxjs';
 import { NowPlayingComponent } from '../now-playing/now-playing.component';
 import { SharedModule } from '../shared/shared.module';
 import { RouterModule } from '@angular/router';
+import { SettingsService } from '../settings/settings.service';
 
 @Component({
   selector: 'app-home',
@@ -18,9 +19,15 @@ import { RouterModule } from '@angular/router';
     NowPlayingComponent,
   ],
   templateUrl: './home.component.html',
+  host: {
+    class: 'flex-1 flex flex-col',
+  },
 })
 export class HomeComponent {
-  constructor(private readonly http: HttpClient) {}
+  constructor(
+    private readonly http: HttpClient,
+    public readonly settings: SettingsService
+  ) {}
 
   private baseUrl = '/api/';
 

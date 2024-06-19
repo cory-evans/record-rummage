@@ -39,12 +39,17 @@ func (h *TrackHandler) Next(c *fiber.Ctx) error {
 		return err
 	}
 
+	q, err := client.GetQueue(c.Context())
+	if err != nil {
+		return err
+	}
+
 	err = client.Next(c.Context())
 	if err != nil {
 		return err
 	}
 
-	return c.JSON(fiber.Map{})
+	return c.JSON(q)
 }
 func (h *TrackHandler) Previous(c *fiber.Ctx) error {
 	client, err := h.spotifyClient.ForUser(c)

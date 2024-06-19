@@ -18,6 +18,8 @@ type PlaylistHandler struct {
 	spotifyRepo   *database.SpotifyRepository
 	spotifyAuth   *spotifyauth.Authenticator
 	spotifyClient *middleware.SpotifyClient
+
+	CurrentlyWorkingPlaylists map[string]float64
 }
 
 type playlistHandlerParams struct {
@@ -38,11 +40,15 @@ func NewPlaylistHandler(p playlistHandlerParams) *PlaylistHandler {
 		spotifyRepo:   p.SpotifyRepository,
 		spotifyAuth:   p.SpotifyAuth,
 		spotifyClient: p.SpotifyClient,
+
+		CurrentlyWorkingPlaylists: make(map[string]float64),
 	}
 
 	x.router.Use(middleware.NewSpotifyTokenMiddleware(middleware.SpotifyTokenMiddlewareConfig{}, p.Config))
 
 	x.router.Post("/refresh", x.Refresh)
+	x.router.Get("/refresh-progress", x.RefreshProgress)
+	x.router.Get("/mine", x.GetUsersPlaylist)
 
 	return x
 }
