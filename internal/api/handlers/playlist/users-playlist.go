@@ -26,5 +26,18 @@ func (h *PlaylistHandler) GetUsersPlaylist(c *fiber.Ctx) error {
 		return err
 	}
 
-	return c.JSON(pp)
+	var ids []spotify.ID
+	for _, p := range pp.Playlists {
+		ids = append(ids, p.ID)
+	}
+
+	snapshotIDs, err := h.spotifyRepo.GetPlaylistSnapshotBulk(ids)
+	if err != nil {
+		return err
+	}
+
+	return c.JSON(fiber.Map{
+		"playlists": pp,
+		"saved":     snapshotIDs,
+	})
 }

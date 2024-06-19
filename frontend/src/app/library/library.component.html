@@ -13,7 +13,7 @@
   <!--  -->
   @for (item of items$|async; track $index) {
   <div class="flex">
-    @if (item.images?.length) {
+    @if (item.images && item.images.length) {
     <img [src]="item.images[0].url" alt="" class="w-12 h-12" />
     } @else {
     <div class="w-12 h-12"></div>
@@ -21,10 +21,24 @@
 
     <div class="flex-1 ml-2 flex flex-col">
       <h3 class="text-lg font-semibold">{{ item.name }}</h3>
-      <span>Total Tracks: {{ item.tracks.total }}</span>
+      <div class="flex justify-between">
+        <span>Total Tracks: {{ item.tracks.total }}</span>
+
+        <div>
+          @if (saved[item.id]; as savedSnapshot) {
+          <!--  -->
+          @if (item.snapshot_id === savedSnapshot) {
+          <span class="text-success">Up to date</span>
+          } @else {
+          <span class="text-warning">Out of date</span>
+          }
+          <!--  -->
+          }
+        </div>
+      </div>
     </div>
 
-    <div class="w-12">
+    <div class="w-12 ml-2">
       <button
         type="button"
         class="ui-btn ui-btn-circle"

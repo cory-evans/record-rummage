@@ -18,6 +18,28 @@ func (r *SpotifyRepository) GetPlaylistSnapshot(id spotify.ID) (string, error) {
 	return snapshotID, nil
 }
 
+func (r *SpotifyRepository) GetPlaylistSnapshotBulk(ids []spotify.ID) (map[spotify.ID]string, error) {
+	var snapshotIDs = make(map[spotify.ID]string)
+	rows, err := r.db.Queryx(`SELECT id, snapshot_id FROM spotify_PlaylistT WHERE id = ANY($1)`, ids)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	for rows.Next() {
+		var id spotify.ID
+		var snapshotID string
+		err = rows.Scan(&id, &snapshotID)
+		if err != nil {
+			return nil, err
+		}
+
+		snapshotIDs[id] = snapshotID
+	}
+
+	return snapshotIDs, nil
+}
+
 func (r *SpotifyRepository) GetAddedBy(playlistID string, trackID string) ([]string, error) {
 	var addedBy = make([]string, 0)
 	err := r.db.Select(&addedBy, `

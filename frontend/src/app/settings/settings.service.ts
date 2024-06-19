@@ -5,6 +5,10 @@ import { Inject, Injectable } from '@angular/core';
   providedIn: 'root',
 })
 export class SettingsService {
+  public get baseAPIUrl() {
+    return '/api/';
+  }
+
   constructor(@Inject(DOCUMENT) private readonly document: Document) {
     this.updateDOM();
   }

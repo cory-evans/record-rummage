@@ -929,7 +929,7 @@ export interface SimplePlaylist {
    * verified playlists. Otherwise the slice is empty.  If returned, the source
    * URL for the image is temporary and will expire in less than a day.
    */
-  images: Image[];
+  images: Image[] | null;
   name: string;
   owner: User;
   public: boolean;

@@ -26,12 +26,20 @@ import { SharedModule } from '../shared/shared.module';
 })
 export class LibraryComponent {
   page$ = new BehaviorSubject<number>(1);
-
+  saved: Record<string, string> = {};
   playlists$ = this.page$.pipe(
     switchMap(
-      (n) => this.http.get<SimplePlaylistPage>(`/api/playlist/mine?page=${n}`)
+      (n) =>
+        this.http.get<{
+          playlists: SimplePlaylistPage;
+          saved: Record<string, string>;
+        }>(`/api/playlist/mine?page=${n}`)
       // of(DATA)
     ),
+    tap((d) => {
+      this.saved = d.saved;
+    }),
+    map((d) => d.playlists),
     shareReplay(1)
   );
 
@@ -73,6 +81,8 @@ export class LibraryComponent {
         first((p) => p.progress === 1)
       )
     );
+
+    this.page$.next(this.page$.value);
 
     this.loading = false;
   }

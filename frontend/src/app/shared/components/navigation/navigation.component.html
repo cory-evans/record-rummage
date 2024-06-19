@@ -1,0 +1,68 @@
+<div class="flex justify-between">
+  <div class="ui-dropdown ui-dropdown-end w-48">
+    <div
+      tabindex="0"
+      class="ui-btn ui-btn-ghost rounded-box w-full justify-start"
+      role="button"
+      #menuBtn
+    >
+      <app-icon icon="bars-3"></app-icon>
+      <span>Menu</span>
+    </div>
+    <div
+      tabindex="0"
+      class="ui-dropdown-content z-[1] w-48 bg-base-200 text-base-content rounded-box shadow-sm"
+      (click)="blur()"
+    >
+      <div class="grid grid-cols-1 gap-2 p-2">
+        <a routerLink="/" class="ui-btn ui-btn-primary rounded-box">
+          <app-icon icon="home" />
+          <span>Home</span>
+        </a>
+        <a routerLink="/remote" class="ui-btn ui-btn-primary rounded-box">
+          <app-icon icon="device-phone-mobile" />
+          <span>Remote</span>
+        </a>
+        <a routerLink="/library" class="ui-btn ui-btn-primary rounded-box">
+          <app-icon icon="building-library" />
+          <span>Library</span>
+        </a>
+        <button
+          type="button"
+          class="ui-btn ui-btn-primary rounded-box"
+          (click)="nowPlaying.refresh()"
+        >
+          <app-icon icon="arrow-path" />
+          <span>Refresh</span>
+        </button>
+
+        <a routerLink="/settings" class="ui-btn ui-btn-primary rounded-box">
+          <app-icon icon="cog" />
+          <span>Settings</span>
+        </a>
+
+        <div class="ui-divider my-0"></div>
+
+        <button
+          type="button"
+          class="ui-btn ui-btn-accent rounded-box"
+          (click)="logout()"
+        >
+          <app-icon icon="lock-closed" />
+          <span>Logout</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <label class="flex cursor-pointer gap-2 items-center">
+    <app-icon icon="sun" />
+    <input
+      type="checkbox"
+      class="ui-toggle ui-theme-controller"
+      [checked]="settings.theme === 'dark'"
+      (change)="settings.toggleTheme($event)"
+    />
+    <app-icon icon="moon" />
+  </label>
+</div>
