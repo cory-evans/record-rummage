@@ -21,10 +21,24 @@
 
     <div class="flex-1 ml-2 flex flex-col">
       <h3 class="text-lg font-semibold">{{ item.name }}</h3>
-      <span>Total Tracks: {{ item.tracks.total }}</span>
+      <div class="flex justify-between">
+        <span>Total Tracks: {{ item.tracks.total }}</span>
+
+        <div>
+          @if (saved[item.id]; as savedSnapshot) {
+          <!--  -->
+          @if (item.snapshot_id === savedSnapshot) {
+          <span class="text-success">Up to date</span>
+          } @else {
+          <span class="text-warning">Out of date</span>
+          }
+          <!--  -->
+          }
+        </div>
+      </div>
     </div>
 
-    <div class="w-12">
+    <div class="w-12 ml-2">
       <button
         type="button"
         class="ui-btn ui-btn-circle"
