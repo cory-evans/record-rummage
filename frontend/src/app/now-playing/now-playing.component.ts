@@ -19,6 +19,7 @@ import {
 import { SharedModule } from '../shared/shared.module';
 import { HttpClient, HttpClientModule } from '@angular/common/http';
 import { RemoteService } from '../shared/services/remote.service';
+import { NowPlayingService } from './now-playing.service';
 
 @Component({
   selector: 'app-now-playing',
@@ -32,8 +33,16 @@ export class NowPlayingComponent implements OnDestroy {
 
   constructor(
     private readonly http: HttpClient,
-    private readonly remoteService: RemoteService
+    private readonly remoteService: RemoteService,
+    private readonly nowPlayingService: NowPlayingService
   ) {
+    this.nowPlayingService
+      .events()
+      .pipe(takeUntil(this._destroyed$))
+      .subscribe(() => {
+        this.forceRefresh$.next();
+      });
+
     // every second check to see if we should force refresh
     timer(1_000, 1_000)
       .pipe(
