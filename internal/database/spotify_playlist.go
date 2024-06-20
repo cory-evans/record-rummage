@@ -82,7 +82,7 @@ func (r *SpotifyRepository) CreateOrUpdatePlaylist(playlist models.SpotifyPlayli
 	return err
 }
 
-func (r *SpotifyRepository) Refresh(playlistID string, tracks []spotify.PlaylistItem) error {
+func (r *SpotifyRepository) Refresh(playlistID string, tracks []spotify.PlaylistItem, removeAll bool) error {
 	// start a transaction
 	tx, err := r.db.Beginx()
 	if err != nil {
@@ -90,14 +90,33 @@ func (r *SpotifyRepository) Refresh(playlistID string, tracks []spotify.Playlist
 	}
 	defer tx.Rollback()
 
-	// delete all tracks for the playlist
-	_, err = tx.Exec(`DELETE FROM spotify_Playlist_TrackT WHERE playlist_id = $1`, playlistID)
+	if removeAll {
+		// delete all tracks for the playlist
+		_, err = tx.Exec(`DELETE FROM spotify_Playlist_TrackT WHERE playlist_id = $1`, playlistID)
+		if err != nil {
+			return err
+		}
+	}
+
+	// insert all tracks for the playlist
+	insertStmt, err := tx.Prepare(`INSERT INTO spotify_Playlist_TrackT (playlist_id, track_id, added_at, added_by) VALUES ($1, $2, $3, $4)`)
 	if err != nil {
 		return err
 	}
 
-	// insert all tracks for the playlist
-	stmt, err := tx.Prepare(`INSERT INTO spotify_Playlist_TrackT (playlist_id, track_id, added_at, added_by) VALUES ($1, $2, $3, $4)`)
+	mergeStmt, err := tx.Prepare(`
+MERGE INTO spotify_Playlist_TrackT AS target
+USING (
+    VALUES
+        ($1, $2, $3::timestamp, $4)
+) AS source (playlist_id, track_id, added_at, added_by)
+ON target.playlist_id = source.playlist_id AND target.track_id = source.track_id AND target.added_by = source.added_by
+WHEN MATCHED THEN
+    UPDATE SET
+        added_at = source.added_at
+WHEN NOT MATCHED THEN
+    INSERT (playlist_id, track_id, added_at, added_by)
+    VALUES (source.playlist_id, source.track_id, source.added_at, source.added_by);`)
 	if err != nil {
 		return err
 	}
@@ -120,7 +139,11 @@ func (r *SpotifyRepository) Refresh(playlistID string, tracks []spotify.Playlist
 			},
 		})
 
-		_, err = stmt.Exec(playlistID, t.Track.Track.ID.String(), t.AddedAt, t.AddedBy.ID)
+		if removeAll {
+			_, err = insertStmt.Exec(playlistID, t.Track.Track.ID.String(), t.AddedAt, t.AddedBy.ID)
+		} else {
+			_, err = mergeStmt.Exec(playlistID, t.Track.Track.ID.String(), t.AddedAt, t.AddedBy.ID)
+		}
 		if err != nil {
 			return err
 		}
