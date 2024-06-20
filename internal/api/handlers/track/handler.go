@@ -7,11 +7,12 @@ import (
 	"github.com/gofiber/fiber/v2"
 	spotifyauth "github.com/zmb3/spotify/v2/auth"
 	"go.uber.org/fx"
+	"go.uber.org/zap"
 )
 
 type TrackHandler struct {
 	config *config.ApplicationConfig
-
+	logger *zap.Logger
 	router *fiber.App
 
 	spotifyRepo   *database.SpotifyRepository
@@ -23,6 +24,7 @@ type trackHandlerParams struct {
 	fx.In
 
 	Config *config.ApplicationConfig
+	Logger *zap.Logger
 
 	SpotifyRepository *database.SpotifyRepository
 	SpotifyAuth       *spotifyauth.Authenticator
@@ -33,6 +35,7 @@ func NewTrackHandler(p trackHandlerParams) *TrackHandler {
 	x := &TrackHandler{
 		router:        fiber.New(),
 		config:        p.Config,
+		logger:        p.Logger,
 		spotifyRepo:   p.SpotifyRepository,
 		spotifyAuth:   p.SpotifyAuth,
 		spotifyClient: p.SpotifyClient,

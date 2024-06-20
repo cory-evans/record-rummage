@@ -51,7 +51,7 @@ func (h *PlaylistHandler) Refresh(c *fiber.Ctx) error {
 				return
 			}
 
-			h.spotifyRepo.Refresh(p.ID.String(), tracks)
+			h.spotifyRepo.Refresh(p.ID.String(), tracks, true)
 		}()
 	}
 
