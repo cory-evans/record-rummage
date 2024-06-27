@@ -17,14 +17,15 @@ import {
   timer,
 } from 'rxjs';
 import { SharedModule } from '../shared/shared.module';
-import { HttpClient, HttpClientModule } from '@angular/common/http';
+import { HttpClient } from '@angular/common/http';
 import { RemoteService } from '../shared/services/remote.service';
 import { NowPlayingService } from './now-playing.service';
 
 @Component({
   selector: 'app-now-playing',
   standalone: true,
-  imports: [CommonModule, SharedModule, HttpClientModule],
+  imports: [CommonModule, SharedModule],
+
   templateUrl: './now-playing.component.html',
 })
 export class NowPlayingComponent implements OnDestroy {
