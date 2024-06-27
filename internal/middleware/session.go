@@ -7,6 +7,8 @@ import (
 	"github.com/cory-evans/record-rummage/pkg/util"
 	"github.com/gofiber/fiber/v2"
 	"github.com/golang-jwt/jwt/v5"
+	spotifyauth "github.com/zmb3/spotify/v2/auth"
+	"go.uber.org/zap"
 	"golang.org/x/oauth2"
 )
 
@@ -19,15 +21,25 @@ type SessionCookie struct {
 
 const cookieKey = "session"
 
-func NewSessionCookieMiddleware(appConfig *config.ApplicationConfig) fiber.Handler {
+func NewSessionCookieMiddleware(
+	appConfig *config.ApplicationConfig,
+	logger *zap.Logger,
+	spotifyauth *spotifyauth.Authenticator,
+	skip func(*fiber.Ctx) bool,
+) fiber.Handler {
 
 	signingKeyAsBytes := []byte(appConfig.JWTSigningKey)
 
 	return func(c *fiber.Ctx) error {
+
+		if skip != nil && skip(c) {
+			return c.Next()
+		}
+
 		sessionCookieString := c.Cookies(cookieKey, "")
 
 		if sessionCookieString == "" {
-			return c.Next()
+			return fiber.ErrUnauthorized
 		}
 
 		token, err := jwt.ParseWithClaims(
@@ -39,15 +51,30 @@ func NewSessionCookieMiddleware(appConfig *config.ApplicationConfig) fiber.Handl
 		)
 
 		if err != nil {
-			return c.Next()
+			return fiber.ErrUnauthorized
 		}
 
 		claims, ok := token.Claims.(*SessionCookie)
 		if !ok {
-			return c.Next()
+			return fiber.ErrUnauthorized
 		}
 
-		c.Locals("session", claims)
+		if claims.SpotifyToken.Expiry.Before(time.Now().UTC()) {
+
+			newToken, err := spotifyauth.RefreshToken(c.Context(), claims.SpotifyToken)
+			if err != nil {
+				logger.Error("failed to refresh token", zap.Error(err))
+				return fiber.ErrUnauthorized
+			}
+
+			err = SetSession(appConfig, c, newToken, claims.SpotifyUserID)
+			if err != nil {
+				logger.Error("failed to set session", zap.Error(err))
+				return fiber.ErrUnauthorized
+			}
+		} else {
+			c.Locals("session", claims)
+		}
 
 		return c.Next()
 	}
@@ -75,6 +102,7 @@ func SetSession(appConfig *config.ApplicationConfig, c *fiber.Ctx, spotifyToken 
 		Name:     cookieKey,
 		Value:    ss,
 		HTTPOnly: true,
+		Expires:  time.Now().UTC().Add(time.Hour * 24 * 30),
 	})
 
 	c.Locals("session", claims)

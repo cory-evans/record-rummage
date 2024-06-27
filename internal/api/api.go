@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"os"
 	"path"
+	"strings"
 
 	"github.com/cory-evans/record-rummage/internal/config"
 	"github.com/cory-evans/record-rummage/internal/middleware"
@@ -13,6 +14,7 @@ import (
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/fiber/v2/middleware/filesystem"
 	"github.com/gofiber/fiber/v2/middleware/proxy"
+	spotifyauth "github.com/zmb3/spotify/v2/auth"
 	"go.uber.org/fx"
 	"go.uber.org/zap"
 )
@@ -28,6 +30,8 @@ type apiParams struct {
 	Logger *zap.Logger
 	Routes []ApiRoute `group:"api-routes"`
 	Config *config.ApplicationConfig
+
+	SpotifyAuth *spotifyauth.Authenticator
 }
 
 func NewApi(p apiParams) *Api {
@@ -40,7 +44,14 @@ func NewApi(p apiParams) *Api {
 	}))
 
 	apiGroup.Use(
-		middleware.NewSessionCookieMiddleware(p.Config),
+		middleware.NewSessionCookieMiddleware(
+			p.Config,
+			p.Logger,
+			p.SpotifyAuth,
+			func(c *fiber.Ctx) bool {
+				return strings.HasPrefix(c.Path(), "/api/auth/") && c.Path() != "/api/auth/me"
+			},
+		),
 	)
 
 	for _, route := range p.Routes {
