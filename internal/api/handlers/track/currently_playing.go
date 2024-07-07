@@ -25,6 +25,10 @@ func (h *TrackHandler) CurrentlyPlaying(c *fiber.Ctx) error {
 		return err
 	}
 
+	if playing.Item == nil {
+		return c.JSON(playing)
+	}
+
 	go checkCurrentlyPlaying(h.logger, h.spotifyRepo, client, playing.PlaybackContext, playing.Item.ID)
 
 	return c.JSON(playing)
