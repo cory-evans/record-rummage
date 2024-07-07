@@ -2,6 +2,7 @@ import { CommonModule } from '@angular/common';
 import { Component, OnDestroy } from '@angular/core';
 import {
   BehaviorSubject,
+  ReplaySubject,
   Subject,
   combineLatest,
   filter,
@@ -102,11 +103,12 @@ export class NowPlayingComponent implements OnDestroy {
   ]).pipe(
     takeUntil(this._destroyed$),
     switchMap(() => this.http.get<Root>('/api/track/currently-playing')),
-    tap(() => this.currentlyPlayingResponseTime$.next(Date.now())),
-    shareReplay(1)
+    tap(() => this.currentlyPlayingResponseTime$.next(Date.now()))
   );
 
-  currentlyPlaying$ = merge(this._currentlyPlaying$, this.nextTrack$);
+  currentlyPlaying$ = merge(this._currentlyPlaying$, this.nextTrack$).pipe(
+    shareReplay(1)
+  );
 
   currentContext$ = this.currentlyPlaying$.pipe(map((x) => x.context));
   currentPlaylistID$ = this.currentContext$.pipe(
